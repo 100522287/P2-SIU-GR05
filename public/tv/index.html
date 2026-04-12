@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎤 Karaoke Ubicuo – Pantalla TV</title>
+  <meta name="description" content="Pantalla principal del karaoke ubicuo - vista para TV/PC">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/tv/style.css">
+</head>
+<body>
+  <!-- Fondo animado -->
+  <div class="bg-animation">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+  </div>
+
+  <!-- Contenedor de notificaciones -->
+  <div id="notifications-container"></div>
+
+  <!-- Indicador de gestos activos -->
+  <div id="gesture-status" class="gesture-status">
+    <div class="gesture-dot"></div>
+    <span>Cámara activa – Detectando gestos</span>
+  </div>
+
+  <!-- Layout principal -->
+  <div class="main-layout">
+    <!-- Zona izquierda: Reproductor -->
+    <div class="player-section">
+      <!-- Header -->
+      <header class="header">
+        <div class="logo">
+          <span class="logo-icon">🎤</span>
+          <h1>Karaoke <span class="highlight">Ubicuo</span></h1>
+        </div>
+        <div class="connection-status" id="connection-status">
+          <div class="status-dot"></div>
+          <span>Conectando...</span>
+        </div>
+      </header>
+
+      <!-- Reproductor de video -->
+      <div class="video-container">
+        <div id="youtube-player-wrapper" class="youtube-wrapper">
+          <div id="youtube-player"></div>
+          <div id="player-overlay" class="player-overlay hidden">
+            <div class="overlay-content">
+              <div class="overlay-icon">🎤</div>
+              <p class="overlay-text">Añade canciones desde el móvil</p>
+              <p class="overlay-subtext">Abre <strong>/mobile</strong> en tu smartphone</p>
+            </div>
+          </div>
+        </div>
+        <!-- Info canción actual -->
+        <div id="now-playing" class="now-playing hidden">
+          <div class="now-playing-indicator">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+          <div class="now-playing-info">
+            <p class="song-title" id="current-title">—</p>
+            <p class="song-artist" id="current-artist">—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zona derecha: Cola + Letras -->
+    <div class="sidebar-section">
+      <!-- Letras -->
+      <div class="lyrics-panel">
+        <div class="panel-header">
+          <h2>📜 Letra</h2>
+        </div>
+        <div id="lyrics-content" class="lyrics-content">
+          <p class="lyrics-placeholder">Las letras aparecerán aquí cuando se reproduzca una canción...</p>
+        </div>
+      </div>
+
+      <!-- Cola de reproducción -->
+      <div class="queue-panel">
+        <div class="panel-header">
+          <h2>📋 Cola de reproducción</h2>
+          <span class="queue-count" id="queue-count">0</span>
+        </div>
+        <div id="queue-list" class="queue-list">
+          <p class="queue-placeholder">Sin canciones en cola</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles de gesto - indicador visual -->
+  <div id="gesture-indicator" class="gesture-indicator hidden">
+    <div class="gesture-icon" id="gesture-icon">✋</div>
+    <div class="gesture-label" id="gesture-label">Stop detectado</div>
+  </div>
+
+  <!-- Video oculto para webcam (gestos MediaPipe) -->
+  <video id="webcam" class="webcam-feed" autoplay playsinline></video>
+  <canvas id="gesture-canvas" class="gesture-canvas"></canvas>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/shared/song-catalog.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js"></script>
+  <script src="/tv/notifications.js"></script>
+  <script src="/tv/youtube-player.js"></script>
+  <script src="/tv/gesture-detector.js"></script>
+  <script src="/tv/app.js"></script>
+</body>
+</html>
