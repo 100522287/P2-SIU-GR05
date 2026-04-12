@@ -127,6 +127,13 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('restart', () => {
+    console.log('[Control] Reiniciar canción');
+    io.emit('sync-state', state);
+    io.emit('restart-song');
+    io.emit('notification', { type: 'control', message: '🔄 Reiniciando canción', icon: '🔄' });
+  });
+
   socket.on('previous', () => {
     console.log('[Control] Anterior');
     if (state.queue.length > 0) {
@@ -195,6 +202,9 @@ io.on('connection', (socket) => {
         break;
       case 'confirm':
         // La confirmación se gestiona en el cliente
+        break;
+      case 'restart':
+        io.emit('restart-song');
         break;
     }
   });

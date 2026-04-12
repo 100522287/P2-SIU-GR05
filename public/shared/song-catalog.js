@@ -5,7 +5,7 @@
  */
 const SONG_CATALOG = [
   // Pop Internacional
-  { title: "Bohemian Rhapsody", artist: "Queen", youtubeQuery: "Queen Bohemian Rhapsody karaoke", youtubeId: "ISfPBsiLO0k" },
+  { title: "Bohemian Rhapsody", artist: "Queen", youtubeQuery: "Queen Bohemian Rhapsody karaoke", youtubeId: "fJ9rUzIMcZQ" },
   { title: "Don't Stop Believin'", artist: "Journey", youtubeQuery: "Journey Don't Stop Believin karaoke", youtubeId: "VcjzHMhBtf0" },
   { title: "Sweet Caroline", artist: "Neil Diamond", youtubeQuery: "Neil Diamond Sweet Caroline karaoke", youtubeId: "IEEWbTMpHaE" },
   { title: "Livin' on a Prayer", artist: "Bon Jovi", youtubeQuery: "Bon Jovi Livin on a Prayer karaoke", youtubeId: "wKpMzmHfkKA" },

@@ -1,6 +1,6 @@
 /**
  * app.js – Lógica principal de la pantalla TV
- * Conecta Socket.IO, YouTube Player, MediaPipe Gestures
+ * Conecta: Socket.IO, YouTube Player, MediaPipe Gestures, Clap Detector
  */
 (function () {
   'use strict';
@@ -9,6 +9,7 @@
   const player = window.karaokePlayer;
   const notifications = window.notificationManager;
   const gestures = window.gestureDetector;
+  const claps = window.clapDetector;
 
   // --- Elementos del DOM ---
   const connectionStatus = document.getElementById('connection-status');
@@ -21,11 +22,14 @@
   const lyricsContent = document.getElementById('lyrics-content');
   const queueList = document.getElementById('queue-list');
   const queueCount = document.getElementById('queue-count');
+  const clapStatus = document.getElementById('clap-status');
 
   let currentState = null;
   let lastLoadedVideoId = null;
 
-  // --- Socket.IO Connection ---
+  // =============================================
+  // SOCKET.IO
+  // =============================================
   socket.on('connect', () => {
     console.log('[Socket] Conectado:', socket.id);
     statusDot.classList.add('connected');
@@ -44,12 +48,27 @@
     updateUI(state);
   });
 
+  // --- Reiniciar canción (desde doble aplauso u otros) ---
+  socket.on('restart-song', () => {
+    console.log('[App] Reiniciando canción actual');
+    player.restart();
+    // Reiniciar scroll de letras
+    if (currentState && currentState.currentIndex >= 0) {
+      const song = currentState.queue[currentState.currentIndex];
+      if (song) {
+        restartLyricsScroll();
+      }
+    }
+  });
+
   // --- Notificaciones ---
   socket.on('notification', (data) => {
     notifications.show(data);
   });
 
-  // --- Actualizar UI ---
+  // =============================================
+  // ACTUALIZAR UI
+  // =============================================
   function updateUI(state) {
     // Cola
     renderQueue(state.queue, state.currentIndex);
@@ -98,7 +117,9 @@
     }
   }
 
-  // --- Renderizar cola ---
+  // =============================================
+  // COLA
+  // =============================================
   function renderQueue(queue, currentIndex) {
     if (queue.length === 0) {
       queueList.innerHTML = '<p class="queue-placeholder">Sin canciones en cola</p>';
@@ -116,7 +137,9 @@
     `).join('');
   }
 
-  // --- Cargar letras ---
+  // =============================================
+  // LETRAS
+  // =============================================
   async function loadLyrics(artist, title) {
     lyricsContent.innerHTML = '<p class="lyrics-placeholder">Cargando letras...</p>';
 
@@ -131,8 +154,7 @@
           `<div class="lyrics-line" data-index="${i}">${line}</div>`
         ).join('');
 
-        // Auto-scroll simple
-        startLyricsScroll(lines.length);
+        startLyricsScroll();
       } else {
         throw new Error('Sin letras');
       }
@@ -142,48 +164,117 @@
     }
   }
 
-  // --- Auto-scroll de letras (simplificado) ---
+  // --- Auto-scroll de letras ---
   let scrollInterval = null;
-  function startLyricsScroll(totalLines) {
-    if (scrollInterval) clearInterval(scrollInterval);
+  let currentLyricsLine = 0;
 
-    let currentLine = 0;
+  function startLyricsScroll() {
+    if (scrollInterval) clearInterval(scrollInterval);
+    currentLyricsLine = 0;
+
     const linesEls = lyricsContent.querySelectorAll('.lyrics-line');
     if (linesEls.length === 0) return;
 
-    // Estimar duración: ~4 segundos por línea promedio
     const intervalMs = 4000;
 
     scrollInterval = setInterval(() => {
-      // Quitar clase active de la anterior
       linesEls.forEach(el => el.classList.remove('active'));
 
-      if (currentLine < linesEls.length) {
-        linesEls[currentLine].classList.add('active');
-        linesEls[currentLine].scrollIntoView({
+      if (currentLyricsLine < linesEls.length) {
+        linesEls[currentLyricsLine].classList.add('active');
+        linesEls[currentLyricsLine].scrollIntoView({
           behavior: 'smooth',
           block: 'center'
         });
-        currentLine++;
+        currentLyricsLine++;
       } else {
         clearInterval(scrollInterval);
       }
     }, intervalMs);
   }
 
-  // --- YouTube: cuando termina una canción ---
+  function restartLyricsScroll() {
+    currentLyricsLine = 0;
+    const linesEls = lyricsContent.querySelectorAll('.lyrics-line');
+    linesEls.forEach(el => el.classList.remove('active'));
+    if (linesEls.length > 0) {
+      linesEls[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    startLyricsScroll();
+  }
+
+  // =============================================
+  // YOUTUBE PLAYER
+  // =============================================
   player.onEnded(() => {
     if (scrollInterval) clearInterval(scrollInterval);
     socket.emit('song-ended');
   });
 
-  // --- MediaPipe Gestures ---
+  // Manejar errores de vídeo
+  player.onError((code, message) => {
+    console.error(`[App] Error de vídeo: ${message}`);
+    notifications.show({
+      type: 'control',
+      message: `❌ Error de vídeo: ${message}`,
+      icon: '❌',
+      duration: 5000
+    });
+
+    // Auto-skip al siguiente si el vídeo no funciona
+    setTimeout(() => {
+      socket.emit('song-ended');
+    }, 3000);
+  });
+
+  // =============================================
+  // MEDIAPIPE GESTURES (Stop + OK)
+  // =============================================
   gestures.onGesture((data) => {
     socket.emit('gesture-detected', data);
   });
 
-  // Iniciar detección de gestos
   gestures.start();
 
-  console.log('[TV] App inicializada');
+  // =============================================
+  // DOBLE APLAUSO (Clap Detector)
+  // =============================================
+  claps.onDoubleClap(() => {
+    console.log('[App] ¡Doble aplauso! → Reiniciar canción');
+
+    socket.emit('gesture-detected', {
+      gesture: 'double-clap',
+      action: 'restart',
+      message: '👏👏 Doble aplauso → Reiniciando canción',
+      icon: '👏',
+      source: 'tv-microphone'
+    });
+
+    // También emitir restart directamente
+    socket.emit('restart');
+  });
+
+  // Feedback visual de clap individual (debug)
+  claps.onClap(() => {
+    // Pequeño flash visual en el indicador
+    if (clapStatus) {
+      clapStatus.style.borderColor = 'rgba(244, 114, 182, 0.6)';
+      setTimeout(() => {
+        clapStatus.style.borderColor = '';
+      }, 200);
+    }
+  });
+
+  // Iniciar detección de aplausos
+  claps.start().then(success => {
+    if (success) {
+      clapStatus.classList.remove('inactive');
+      console.log('[App] Detector de aplausos activo');
+    } else {
+      clapStatus.classList.add('inactive');
+      clapStatus.querySelector('span').textContent = 'Micrófono no disponible';
+    }
+  });
+
+  console.log('[TV] App inicializada – Gestos + Aplausos + YouTube');
 })();

@@ -573,6 +573,21 @@ body {
   box-shadow: none;
 }
 
+/* --- Clap Status (positioned below gesture status) --- */
+.clap-status {
+  top: 42px;
+}
+
+.clap-dot {
+  background: var(--accent) !important;
+  box-shadow: 0 0 6px rgba(244, 114, 182, 0.5) !important;
+}
+
+.clap-status.inactive .clap-dot {
+  background: var(--text-muted) !important;
+  box-shadow: none !important;
+}
+
 /* --- Notifications --- */
 #notifications-container {
   position: fixed;
