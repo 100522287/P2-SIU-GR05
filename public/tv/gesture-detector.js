@@ -1,9 +1,9 @@
 /**
  * gesture-detector.js – Detección de gestos con MediaPipe Hands
  * Detecta:
- *   - STOP (palma abierta) → Pausar reproducción
- *   - OK (pulgar+índice en círculo) → Reanudar reproducción
- *   - X (muñecas cruzadas) → Eliminar canciones posteriores de la cola
+ * - STOP (palma abierta) → Pausar reproducción
+ * - OK (pulgar+índice en círculo) → Reanudar reproducción
+ * - X (muñecas cruzadas) → Eliminar canciones posteriores de la cola
  */
 class GestureDetector {
   constructor() {
@@ -39,7 +39,7 @@ class GestureDetector {
         }
       });
 
-      // maxNumHands: 2 para poder detectar el gesto de X (dos manos cruzadas)
+      // maxNumHands: 2 para poder detectar el gesto de X (dos manos)
       this.hands.setOptions({
         maxNumHands: 2,
         modelComplexity: 1,
@@ -131,41 +131,24 @@ class GestureDetector {
   }
 
   /**
-   * Detectar gesto de X: muñecas cruzadas (brazos cruzados frente a la cámara)
-   * Se detecta cuando las dos muñecas están próximas y los antebrazos se cruzan
+   * Detectar gesto de X: muñecas cruzadas (X pequeña frente a la cámara)
+   * Se detecta cuando las dos muñecas están muy próximas entre sí en ambos ejes
    */
   _isXGesture(lm1, lm2) {
     const wrist1 = lm1[0];
     const wrist2 = lm2[0];
 
-    // Las muñecas deben estar cerca entre sí
-    const wristDist = this._distance(wrist1, wrist2);
-    if (wristDist > 0.18) return false;
+    // Calculamos la distancia entre las dos muñecas en ambos ejes (X e Y)
+    const distanceX = Math.abs(wrist1.x - wrist2.x);
+    const distanceY = Math.abs(wrist1.y - wrist2.y);
 
-    // Comprobar que los brazos se cruzan: el dedo medio de cada mano
-    // debe estar en el lado opuesto al de su muñeca
-    const middle1 = lm1[12]; // punta del dedo medio mano 1
-    const middle2 = lm2[12]; // punta del dedo medio mano 2
+    // Si las muñecas están muy juntas en pantalla (formando una X pequeña)
+    // El valor 0.15 indica un 15% del tamaño de la pantalla.
+    if (distanceX < 0.15 && distanceY < 0.15) {
+      return true;
+    }
 
-    // Un brazo va de izquierda a derecha y el otro de derecha a izquierda
-    // Mano 1: dirección muñeca -> punta dedo medio
-    const dir1x = middle1.x - wrist1.x;
-    const dir2x = middle2.x - wrist2.x;
-
-    // Las manos deben apuntar en direcciones opuestas en X (se cruzan)
-    const crossing = (dir1x * dir2x) < 0;
-    if (!crossing) return false;
-
-    // Las muñecas deben estar a una altura similar (no una muy arriba y otra muy abajo)
-    const heightDiff = Math.abs(wrist1.y - wrist2.y);
-    if (heightDiff > 0.15) return false;
-
-    // Verificar que las puntas de los dedos están suficientemente separadas
-    // (indicando brazos extendidos, no manos juntas)
-    const tipsDist = this._distance(middle1, middle2);
-    if (tipsDist < 0.15) return false;
-
-    return true;
+    return false;
   }
 
   /**
