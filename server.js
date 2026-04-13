@@ -243,7 +243,7 @@ io.on('connection', (socket) => {
 });
 
 // --- Arrancar servidor ---
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
   // Obtener IP local para mostrar en consola
   const os = require('os');
