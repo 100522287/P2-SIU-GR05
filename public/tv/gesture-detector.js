@@ -19,9 +19,9 @@ class GestureDetector {
 
     this.lastGesture = null;
     this.gestureStartTime = 0;
-    this.gestureCooldown = 2500; // ms entre detecciones
+    this.gestureCooldown = 1800; // ms entre detecciones
     this.lastGestureTime = 0;
-    this.holdThreshold = 800;    // ms que hay que mantener el gesto
+    this.holdThreshold = 500;    // ms que hay que mantener el gesto
 
     this.onGestureCallback = null;
     this.isActive = false;
@@ -44,8 +44,8 @@ class GestureDetector {
       this.hands.setOptions({
         maxNumHands: 2,
         modelComplexity: 1,
-        minDetectionConfidence: 0.7,
-        minTrackingConfidence: 0.5
+        minDetectionConfidence: 0.55,
+        minTrackingConfidence: 0.45
       });
 
       this.hands.onResults((results) => this._onResults(results));
@@ -147,8 +147,8 @@ class GestureDetector {
     const distanceY = Math.abs(wrist1.y - wrist2.y);
 
     // Si las muñecas están muy juntas en pantalla (formando una X pequeña)
-    // El valor 0.15 indica un 15% del tamaño de la pantalla.
-    if (distanceX < 0.15 && distanceY < 0.15) {
+    // El valor 0.22/0.25 permite más margen para detectar el cruce
+    if (distanceX < 0.22 && distanceY < 0.25) {
       return true;
     }
 
@@ -181,7 +181,10 @@ class GestureDetector {
     const ringExtended = lm[16].y < lm[14].y;
     const pinkyExtended = lm[20].y < lm[18].y;
 
-    return distance < 0.06 && middleExtended && ringExtended && pinkyExtended;
+    // Al menos 2 de los 3 dedos restantes deben estar extendidos
+    const extendedCount = (middleExtended ? 1 : 0) + (ringExtended ? 1 : 0) + (pinkyExtended ? 1 : 0);
+
+    return distance < 0.10 && extendedCount >= 2;
   }
 
   /**
@@ -196,26 +199,28 @@ class GestureDetector {
    */
   _isThumbsUpGesture(lm) {
     const thumbTip = lm[4];
-    const thumbIP  = lm[3];
+    const thumbIP = lm[3];
     const thumbMCP = lm[2];
-    const wrist    = lm[0];
+    const wrist = lm[0];
 
     // 1. El pulgar debe apuntar claramente hacia arriba
     //    (thumb tip debe estar por encima del IP joint y la muñeca)
-    const thumbPointsUp = thumbTip.y < thumbIP.y && thumbTip.y < thumbMCP.y && thumbTip.y < wrist.y;
+    const thumbPointsUp = thumbTip.y < thumbIP.y && thumbTip.y < wrist.y;
     if (!thumbPointsUp) return false;
 
     // El pulgar debe tener una extensión vertical significativa respecto al IP joint
     const thumbExtension = thumbIP.y - thumbTip.y;
-    if (thumbExtension < 0.03) return false;
+    if (thumbExtension < 0.02) return false;
 
     // 2. Los cuatro dedos restantes deben estar CERRADOS (punta por debajo del nudillo PIP)
+    //    Se exige que al menos 3 de los 4 estén cerrados para dar margen
     const indexClosed = lm[8].y > lm[6].y;
     const middleClosed = lm[12].y > lm[10].y;
     const ringClosed = lm[16].y > lm[14].y;
     const pinkyClosed = lm[20].y > lm[18].y;
+    const closedCount = (indexClosed ? 1 : 0) + (middleClosed ? 1 : 0) + (ringClosed ? 1 : 0) + (pinkyClosed ? 1 : 0);
 
-    return indexClosed && middleClosed && ringClosed && pinkyClosed;
+    return closedCount >= 3;
   }
 
   /**
