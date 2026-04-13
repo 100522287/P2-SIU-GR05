@@ -9,7 +9,6 @@
   const player = window.karaokePlayer;
   const notifications = window.notificationManager;
   const gestures = window.gestureDetector;
-  const claps = window.clapDetector;
 
   // --- Elementos del DOM ---
   const connectionStatus = document.getElementById('connection-status');
@@ -21,7 +20,6 @@
   const playerOverlay = document.getElementById('player-overlay');
   const queueList = document.getElementById('queue-list');
   const queueCount = document.getElementById('queue-count');
-  const clapStatus = document.getElementById('clap-status');
 
   let currentState = null;
   let lastLoadedVideoId = null;
@@ -159,44 +157,5 @@
 
   gestures.start();
 
-  // =============================================
-  // DOBLE APLAUSO (Clap Detector)
-  // =============================================
-  claps.onDoubleClap(() => {
-    console.log('[App] ¡Doble aplauso! → Reiniciar canción');
-
-    socket.emit('gesture-detected', {
-      gesture: 'double-clap',
-      action: 'restart',
-      message: '👏👏 Doble aplauso → Reiniciando canción',
-      icon: '👏',
-      source: 'tv-microphone'
-    });
-
-    // También emitir restart directamente
-    socket.emit('restart');
-  });
-
-  // Feedback visual de clap individual (debug)
-  claps.onClap(() => {
-    if (clapStatus) {
-      clapStatus.style.borderColor = 'rgba(244, 114, 182, 0.6)';
-      setTimeout(() => {
-        clapStatus.style.borderColor = '';
-      }, 200);
-    }
-  });
-
-  // Iniciar detección de aplausos
-  claps.start().then(success => {
-    if (success) {
-      clapStatus.classList.remove('inactive');
-      console.log('[App] Detector de aplausos activo');
-    } else {
-      clapStatus.classList.add('inactive');
-      clapStatus.querySelector('span').textContent = 'Micrófono no disponible';
-    }
-  });
-
-  console.log('[TV] App inicializada – Gestos + Aplausos + YouTube');
+  console.log('[TV] App inicializada – Gestos + YouTube');
 })();

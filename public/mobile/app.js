@@ -432,21 +432,6 @@
     highlightGestureCard('gesture-shake');
   });
 
-  motion.onDrop(() => {
-    console.log('[App] Drop detectado → Mute');
-    showGestureFlash('⬇️', '¡Descenso! → Silenciar');
-
-    socket.emit('gesture-detected', {
-      gesture: 'drop',
-      action: 'mute',
-      message: '⬇️ Descenso brusco → Silenciar',
-      icon: '⬇️',
-      source: 'mobile-motion'
-    });
-
-    if (navigator.vibrate) navigator.vibrate([200]);
-    highlightGestureCard('gesture-drop');
-  });
 
   // Iniciar detección de movimiento
   motion.start();

@@ -39,14 +39,18 @@
     </header>
 
     <!-- Tabs de navegación -->
-    <nav class="tab-bar">
+<nav class="tab-bar">
       <button class="tab active" data-tab="search" id="tab-search">
         <span class="tab-icon">🔍</span>
         <span class="tab-label">Buscar</span>
       </button>
+      <button class="tab" data-tab="voice" id="tab-voice">
+        <span class="tab-icon">🎤</span>
+        <span class="tab-label">Voz</span>
+      </button>
       <button class="tab" data-tab="controls" id="tab-controls">
         <span class="tab-icon">🎛️</span>
-        <span class="tab-label">Controles</span>
+        <span class="tab-label">Físicos</span>
       </button>
       <button class="tab" data-tab="queue" id="tab-queue">
         <span class="tab-icon">📋</span>
@@ -86,42 +90,34 @@
         </div>
       </div>
 
-      <!-- TAB: Controles -->
-      <div class="tab-panel" id="panel-controls">
-        <!-- Now Playing Card -->
-        <div class="now-playing-card" id="mobile-now-playing">
-          <div class="np-artwork">🎵</div>
-          <div class="np-info">
-            <p class="np-title" id="mobile-current-title">Sin reproducción</p>
-            <p class="np-artist" id="mobile-current-artist">Añade canciones para empezar</p>
+      <!-- TAB: Voz -->
+      <div class="tab-panel" id="panel-voice">
+        <div class="voice-section">
+          <h3 class="section-title">🎤 Comandos de voz</h3>
+
+          <button class="voice-btn" id="btn-voice">
+            <span class="voice-btn-icon">🎙️</span>
+            <span class="voice-btn-text">Toca para hablar</span>
+          </button>
+
+          <button class="voice-continuous-btn" id="btn-voice-continuous">
+            <span class="voice-continuous-icon">🔄</span>
+            <span class="voice-continuous-text">Escucha continua (palabra clave)</span>
+          </button>
+          <div class="continuous-status hidden" id="continuous-status">
+            <div class="continuous-dot"></div>
+            <span>Escuchando... Di <strong>"karaoke"</strong> + comando</span>
+          </div>
+
+          <p class="voice-hint">
+            <strong>Manual:</strong> Pulsa y di: "siguiente", "pausa", "reproducir", "silencio", "anterior"<br>
+            <strong>Continua:</strong> Di: <strong>"karaoke siguiente"</strong>, <strong>"karaoke pausa"</strong>, etc.
+          </p>
+          <div class="voice-feedback hidden" id="voice-feedback">
+            <span class="voice-result" id="voice-result"></span>
           </div>
         </div>
-
-        <!-- Controles principales -->
-        <div class="controls-grid">
-          <button class="control-btn secondary" id="btn-previous" title="Anterior">
-            <span>⏮️</span>
-            <label>Anterior</label>
-          </button>
-          <button class="control-btn primary" id="btn-play-pause" title="Play/Pausa">
-            <span id="play-pause-icon">▶️</span>
-            <label id="play-pause-label">Play</label>
-          </button>
-          <button class="control-btn secondary" id="btn-skip" title="Siguiente">
-            <span>⏭️</span>
-            <label>Siguiente</label>
-          </button>
-        </div>
-
-        <!-- Control de volumen -->
-        <div class="volume-control">
-          <span class="vol-icon">🔈</span>
-          <input type="range" id="volume-slider" min="0" max="100" value="100" class="volume-slider">
-          <span class="vol-icon">🔊</span>
-          <button class="mute-btn" id="btn-mute" title="Silenciar">
-            <span id="mute-icon">🔇</span>
-          </button>
-        </div>
+      </div>
 
         <!-- Voice Commands -->
         <div class="voice-section">
@@ -153,6 +149,42 @@
         </div>
       </div>
 
+
+      <!-- TAB: Controles físicos -->
+      <div class="tab-panel" id="panel-controls">
+        <div class="now-playing-card" id="mobile-now-playing">
+          <div class="np-artwork">🎵</div>
+          <div class="np-info">
+            <p class="np-title" id="mobile-current-title">Sin reproducción</p>
+            <p class="np-artist" id="mobile-current-artist">Añade canciones para empezar</p>
+          </div>
+        </div>
+
+        <div class="controls-grid">
+          <button class="control-btn secondary" id="btn-previous" title="Anterior">
+            <span>⏮️</span>
+            <label>Anterior</label>
+          </button>
+          <button class="control-btn primary" id="btn-play-pause" title="Play/Pausa">
+            <span id="play-pause-icon">▶️</span>
+            <label id="play-pause-label">Play</label>
+          </button>
+          <button class="control-btn secondary" id="btn-skip" title="Siguiente">
+            <span>⏭️</span>
+            <label>Siguiente</label>
+          </button>
+        </div>
+
+        <div class="volume-control">
+          <span class="vol-icon">🔈</span>
+          <input type="range" id="volume-slider" min="0" max="100" value="100" class="volume-slider">
+          <span class="vol-icon">🔊</span>
+          <button class="mute-btn" id="btn-mute" title="Silenciar">
+            <span id="mute-icon">🔇</span>
+          </button>
+        </div>
+      </div>
+
       <!-- TAB: Cola -->
       <div class="tab-panel" id="panel-queue">
         <h3 class="section-title">📋 Cola de reproducción</h3>
@@ -174,17 +206,6 @@
               <p>Agita el móvil rápidamente para saltar a la siguiente canción</p>
             </div>
             <div class="gesture-card-status" id="shake-status">
-              <span class="status-indicator active"></span> Activo
-            </div>
-          </div>
-
-          <div class="gesture-card" id="gesture-drop">
-            <div class="gesture-card-icon">⬇️</div>
-            <div class="gesture-card-info">
-              <h4>Descenso Brusco → Mute</h4>
-              <p>Baja el brazo completo bruscamente (no solo muñeca) para silenciar</p>
-            </div>
-            <div class="gesture-card-status" id="drop-status">
               <span class="status-indicator active"></span> Activo
             </div>
           </div>
@@ -233,16 +254,6 @@
             </div>
           </div>
 
-          <div class="gesture-card" id="gesture-clap">
-            <div class="gesture-card-icon">👏</div>
-            <div class="gesture-card-info">
-              <h4>Doble Aplauso → Reiniciar</h4>
-              <p>Dos aplausos fuertes y rápidos para reiniciar la canción actual desde el principio</p>
-            </div>
-            <div class="gesture-card-status">
-              <span class="status-indicator active"></span> En TV
-            </div>
-          </div>
         </div>
 
         <!-- Flash visual para gestos detectados -->

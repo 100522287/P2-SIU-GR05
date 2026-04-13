@@ -12,7 +12,6 @@ class MotionDetector {
     this.shakeThreshold = 25;     // Umbral de aceleración para shake
     this.cooldownMs = 2000;       // Cooldown entre detecciones
     this.lastShakeTime = 0;
-    this.lastDropTime = 0;
 
     // Para detección de shake: necesitamos múltiples picos rápidos
     this.shakeCount = 0;
@@ -20,23 +19,8 @@ class MotionDetector {
     this.shakeStartTime = 0;
     this.requiredShakes = 3;
 
-    // Para detección de drop MEJORADA:
-    // Requiere una aceleración Y negativa fuerte Y sostenida
-    this.dropThreshold = 35;       // Umbral MUCHO MÁS ALTO para deltaY
-    this.dropSustainedMs = 150;    // El movimiento brusco debe durar al menos 150ms
-    this.dropStartTime = 0;
-    this.isInDrop = false;
-    this.dropSamples = 0;
-    this.dropRequiredSamples = 3;  // Necesitamos al menos 3 muestras consecutivas de caída
-
-    // Historial de aceleración Y para análisis de patrón
-    this.accYHistory = [];
-    this.maxHistory = 10;
-
     this.onShakeCallback = null;
-    this.onDropCallback = null;
     this.isActive = false;
-    this.permissionGranted = false;
   }
 
   /**
@@ -155,42 +139,10 @@ class MotionDetector {
   }
 
   /**
-   * Verificar patrón de descenso analizando el historial de aceleración Y
-   * Un descenso real tiene:
-   *   - Valores de Y consistentemente bajos (negativos) en las últimas muestras
-   *   - Un delta grande entre las muestras recientes y las anteriores
-   */
-  _checkDescendingPattern() {
-    if (this.accYHistory.length < 3) return false;
-
-    const recent = this.accYHistory.slice(-3);
-    const older = this.accYHistory.slice(-6, -3);
-
-    if (older.length === 0) return false;
-
-    // Promedio de Y reciente vs antiguo
-    const recentAvgY = recent.reduce((sum, s) => sum + s.y, 0) / recent.length;
-    const olderAvgY = older.reduce((sum, s) => sum + s.y, 0) / older.length;
-
-    // El delta debe ser MUY grande (caída real del brazo)
-    const deltaY = recentAvgY - olderAvgY;
-
-    // Un descenso brusco real produce un deltaY negativo muy grande
-    return deltaY < -this.dropThreshold;
-  }
-
-  /**
    * Registrar callback para shake
    */
   onShake(callback) {
     this.onShakeCallback = callback;
-  }
-
-  /**
-   * Registrar callback para drop
-   */
-  onDrop(callback) {
-    this.onDropCallback = callback;
   }
 
   /**
