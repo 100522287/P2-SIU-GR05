@@ -4,6 +4,7 @@
  * - STOP (palma abierta) → Pausar reproducción
  * - OK (pulgar+índice en círculo) → Reanudar reproducción
  * - X (muñecas cruzadas) → Eliminar canciones posteriores de la cola
+ * - THUMBS UP (👍 pulgar arriba) → Reiniciar canción desde el principio
  */
 class GestureDetector {
   constructor() {
@@ -127,6 +128,9 @@ class GestureDetector {
     if (this._isOkGesture(landmarks)) {
       return 'ok';
     }
+    if (this._isThumbsUpGesture(landmarks)) {
+      return 'thumbs-up';
+    }
     return null;
   }
 
@@ -181,6 +185,40 @@ class GestureDetector {
   }
 
   /**
+   * Detectar gesto de THUMBS UP (👍): pulgar extendido hacia arriba,
+   * con todos los demás dedos cerrados (puño cerrado con pulgar arriba).
+   *
+   * Condiciones:
+   * 1. El pulgar apunta hacia arriba: thumb tip (4) está claramente por encima
+   *    del thumb IP joint (3) y de la muñeca (0).
+   * 2. Los 4 dedos restantes están cerrados: las puntas de los dedos (8,12,16,20)
+   *    están por debajo de sus respectivos nudillos PIP (6,10,14,18).
+   */
+  _isThumbsUpGesture(lm) {
+    const thumbTip = lm[4];
+    const thumbIP  = lm[3];
+    const thumbMCP = lm[2];
+    const wrist    = lm[0];
+
+    // 1. El pulgar debe apuntar claramente hacia arriba
+    //    (thumb tip debe estar por encima del IP joint y la muñeca)
+    const thumbPointsUp = thumbTip.y < thumbIP.y && thumbTip.y < thumbMCP.y && thumbTip.y < wrist.y;
+    if (!thumbPointsUp) return false;
+
+    // El pulgar debe tener una extensión vertical significativa respecto al IP joint
+    const thumbExtension = thumbIP.y - thumbTip.y;
+    if (thumbExtension < 0.03) return false;
+
+    // 2. Los cuatro dedos restantes deben estar CERRADOS (punta por debajo del nudillo PIP)
+    const indexClosed = lm[8].y > lm[6].y;
+    const middleClosed = lm[12].y > lm[10].y;
+    const ringClosed = lm[16].y > lm[14].y;
+    const pinkyClosed = lm[20].y > lm[18].y;
+
+    return indexClosed && middleClosed && ringClosed && pinkyClosed;
+  }
+
+  /**
    * Contar dedos extendidos
    */
   _countExtendedFingers(lm) {
@@ -231,6 +269,11 @@ class GestureDetector {
         action = 'clear-queue-after';
         message = '❌ Gesto X – Limpiar cola posterior';
         icon = '❌';
+        break;
+      case 'thumbs-up':
+        action = 'restart';
+        message = '👍 Pulgar Arriba – Reiniciar canción';
+        icon = '👍';
         break;
       default:
         return;

@@ -61,6 +61,7 @@ Y modificar `server.js` para usar HTTPS (ver comentarios en el código).
 | **Comando de Voz** | Decir "siguiente", "pausa", "reproducir", "silencio" | Web Speech API |
 | **Gesto de Stop** | Palma abierta (✋) frente a webcam → pausar/reanudar | MediaPipe Hands |
 | **Descenso Brusco** | Bajar el móvil bruscamente → silenciar | DeviceMotion API |
+| **Pulgar Arriba** | Gesto de 👍 frente a webcam → reiniciar canción | MediaPipe Hands |
 
 ## 🏗️ Arquitectura
 
