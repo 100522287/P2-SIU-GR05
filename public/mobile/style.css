@@ -620,7 +620,7 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .voice-btn:active, .voice-btn.listening {
@@ -642,10 +642,78 @@ body {
   font-size: 24px;
 }
 
-.voice-hint {
+/* --- Botón de escucha continua --- */
+.voice-continuous-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 8px;
+}
+
+.voice-continuous-btn:active {
+  transform: scale(0.98);
+}
+
+.voice-continuous-btn.active {
+  border-color: var(--success);
+  background: rgba(52, 211, 153, 0.1);
+  color: var(--success);
+}
+
+.voice-continuous-icon {
+  font-size: 18px;
+}
+
+.voice-continuous-btn.active .voice-continuous-icon {
+  animation: spin 2s linear infinite;
+}
+
+/* --- Estado de escucha continua --- */
+.continuous-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: var(--radius-xs);
   font-size: 12px;
+  color: var(--success);
+  animation: fadeIn 0.3s ease;
+}
+
+.continuous-status.hidden {
+  display: none;
+}
+
+.continuous-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+  animation: blink 1.5s infinite;
+}
+
+.voice-hint {
+  font-size: 11px;
   color: var(--text-muted);
   margin-bottom: 10px;
+  line-height: 1.6;
 }
 
 .voice-feedback {

@@ -19,7 +19,6 @@
   const currentTitle = document.getElementById('current-title');
   const currentArtist = document.getElementById('current-artist');
   const playerOverlay = document.getElementById('player-overlay');
-  const lyricsContent = document.getElementById('lyrics-content');
   const queueList = document.getElementById('queue-list');
   const queueCount = document.getElementById('queue-count');
   const clapStatus = document.getElementById('clap-status');
@@ -52,13 +51,6 @@
   socket.on('restart-song', () => {
     console.log('[App] Reiniciando canción actual');
     player.restart();
-    // Reiniciar scroll de letras
-    if (currentState && currentState.currentIndex >= 0) {
-      const song = currentState.queue[currentState.currentIndex];
-      if (song) {
-        restartLyricsScroll();
-      }
-    }
   });
 
   // --- Notificaciones ---
@@ -86,7 +78,6 @@
       if (song.youtubeId && song.youtubeId !== lastLoadedVideoId) {
         lastLoadedVideoId = song.youtubeId;
         player.loadVideo(song.youtubeId);
-        loadLyrics(song.artist, song.title);
       }
 
       // Play/Pause
@@ -113,7 +104,6 @@
       currentTitle.textContent = '—';
       currentArtist.textContent = '—';
       lastLoadedVideoId = null;
-      lyricsContent.innerHTML = '<p class="lyrics-placeholder">Las letras aparecerán aquí cuando se reproduzca una canción...</p>';
     }
   }
 
@@ -138,76 +128,9 @@
   }
 
   // =============================================
-  // LETRAS
-  // =============================================
-  async function loadLyrics(artist, title) {
-    lyricsContent.innerHTML = '<p class="lyrics-placeholder">Cargando letras...</p>';
-
-    try {
-      const response = await fetch(`/api/lyrics/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-      if (!response.ok) throw new Error('No encontradas');
-
-      const data = await response.json();
-      if (data.lyrics) {
-        const lines = data.lyrics.split('\n').filter(l => l.trim() !== '');
-        lyricsContent.innerHTML = lines.map((line, i) =>
-          `<div class="lyrics-line" data-index="${i}">${line}</div>`
-        ).join('');
-
-        startLyricsScroll();
-      } else {
-        throw new Error('Sin letras');
-      }
-    } catch (err) {
-      console.warn('[Letras] No disponibles:', err.message);
-      lyricsContent.innerHTML = '<p class="lyrics-placeholder">🎵 Letra no disponible para esta canción.<br>¡Canta de memoria! 🎤</p>';
-    }
-  }
-
-  // --- Auto-scroll de letras ---
-  let scrollInterval = null;
-  let currentLyricsLine = 0;
-
-  function startLyricsScroll() {
-    if (scrollInterval) clearInterval(scrollInterval);
-    currentLyricsLine = 0;
-
-    const linesEls = lyricsContent.querySelectorAll('.lyrics-line');
-    if (linesEls.length === 0) return;
-
-    const intervalMs = 4000;
-
-    scrollInterval = setInterval(() => {
-      linesEls.forEach(el => el.classList.remove('active'));
-
-      if (currentLyricsLine < linesEls.length) {
-        linesEls[currentLyricsLine].classList.add('active');
-        linesEls[currentLyricsLine].scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-        currentLyricsLine++;
-      } else {
-        clearInterval(scrollInterval);
-      }
-    }, intervalMs);
-  }
-
-  function restartLyricsScroll() {
-    currentLyricsLine = 0;
-    const linesEls = lyricsContent.querySelectorAll('.lyrics-line');
-    linesEls.forEach(el => el.classList.remove('active'));
-    if (linesEls.length > 0) {
-      linesEls[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    startLyricsScroll();
-  }
-
-  // =============================================
   // YOUTUBE PLAYER
   // =============================================
   player.onEnded(() => {
-    if (scrollInterval) clearInterval(scrollInterval);
     socket.emit('song-ended');
   });
 
@@ -228,7 +151,7 @@
   });
 
   // =============================================
-  // MEDIAPIPE GESTURES (Stop + OK)
+  // MEDIAPIPE GESTURES (Stop=Pause, OK=Resume, X=Clear queue)
   // =============================================
   gestures.onGesture((data) => {
     socket.emit('gesture-detected', data);
@@ -256,7 +179,6 @@
 
   // Feedback visual de clap individual (debug)
   claps.onClap(() => {
-    // Pequeño flash visual en el indicador
     if (clapStatus) {
       clapStatus.style.borderColor = 'rgba(244, 114, 182, 0.6)';
       setTimeout(() => {

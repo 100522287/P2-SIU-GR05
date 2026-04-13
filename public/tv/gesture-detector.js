@@ -1,6 +1,9 @@
 /**
  * gesture-detector.js – Detección de gestos con MediaPipe Hands
- * Detecta: Gesto de STOP (palma abierta) y gesto de OK (pulgar+índice en círculo)
+ * Detecta:
+ *   - STOP (palma abierta) → Pausar reproducción
+ *   - OK (pulgar+índice en círculo) → Reanudar reproducción
+ *   - X (muñecas cruzadas) → Eliminar canciones posteriores de la cola
  */
 class GestureDetector {
   constructor() {
@@ -15,9 +18,9 @@ class GestureDetector {
 
     this.lastGesture = null;
     this.gestureStartTime = 0;
-    this.gestureCooldown = 2000; // ms entre detecciones
+    this.gestureCooldown = 2500; // ms entre detecciones
     this.lastGestureTime = 0;
-    this.holdThreshold = 600;   // ms que hay que mantener el gesto
+    this.holdThreshold = 800;    // ms que hay que mantener el gesto
 
     this.onGestureCallback = null;
     this.isActive = false;
@@ -36,8 +39,9 @@ class GestureDetector {
         }
       });
 
+      // maxNumHands: 2 para poder detectar el gesto de X (dos manos cruzadas)
       this.hands.setOptions({
-        maxNumHands: 1,
+        maxNumHands: 2,
         modelComplexity: 1,
         minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.5
@@ -78,8 +82,7 @@ class GestureDetector {
       return;
     }
 
-    const landmarks = results.multiHandLandmarks[0];
-    const gesture = this._detectGesture(landmarks);
+    const gesture = this._detectGestureFromResults(results);
     const now = Date.now();
 
     if (gesture) {
@@ -104,9 +107,20 @@ class GestureDetector {
   }
 
   /**
-   * Detectar qué gesto se está haciendo
+   * Detectar qué gesto se está haciendo (soporta 1 o 2 manos)
    */
-  _detectGesture(landmarks) {
+  _detectGestureFromResults(results) {
+    const hands = results.multiHandLandmarks;
+
+    // --- Gesto de X: dos manos con muñecas cruzadas ---
+    if (hands.length === 2) {
+      if (this._isXGesture(hands[0], hands[1])) {
+        return 'x-cross';
+      }
+    }
+
+    // --- Gestos de una mano (usar la primera detectada) ---
+    const landmarks = hands[0];
     if (this._isStopGesture(landmarks)) {
       return 'stop';
     }
@@ -117,19 +131,52 @@ class GestureDetector {
   }
 
   /**
+   * Detectar gesto de X: muñecas cruzadas (brazos cruzados frente a la cámara)
+   * Se detecta cuando las dos muñecas están próximas y los antebrazos se cruzan
+   */
+  _isXGesture(lm1, lm2) {
+    const wrist1 = lm1[0];
+    const wrist2 = lm2[0];
+
+    // Las muñecas deben estar cerca entre sí
+    const wristDist = this._distance(wrist1, wrist2);
+    if (wristDist > 0.18) return false;
+
+    // Comprobar que los brazos se cruzan: el dedo medio de cada mano
+    // debe estar en el lado opuesto al de su muñeca
+    const middle1 = lm1[12]; // punta del dedo medio mano 1
+    const middle2 = lm2[12]; // punta del dedo medio mano 2
+
+    // Un brazo va de izquierda a derecha y el otro de derecha a izquierda
+    // Mano 1: dirección muñeca -> punta dedo medio
+    const dir1x = middle1.x - wrist1.x;
+    const dir2x = middle2.x - wrist2.x;
+
+    // Las manos deben apuntar en direcciones opuestas en X (se cruzan)
+    const crossing = (dir1x * dir2x) < 0;
+    if (!crossing) return false;
+
+    // Las muñecas deben estar a una altura similar (no una muy arriba y otra muy abajo)
+    const heightDiff = Math.abs(wrist1.y - wrist2.y);
+    if (heightDiff > 0.15) return false;
+
+    // Verificar que las puntas de los dedos están suficientemente separadas
+    // (indicando brazos extendidos, no manos juntas)
+    const tipsDist = this._distance(middle1, middle2);
+    if (tipsDist < 0.15) return false;
+
+    return true;
+  }
+
+  /**
    * Detectar gesto de STOP: palma abierta con todos los dedos extendidos
    */
   _isStopGesture(lm) {
-    // Verificar que todos los dedos están extendidos
     const fingersExtended = this._countExtendedFingers(lm);
-    // Palma abierta = 5 dedos extendidos
     if (fingersExtended < 5) return false;
 
-    // Verificar que la mano está orientada hacia la cámara (palma frontal)
-    // La muñeca (0) debe estar más cerca en Z que las puntas de los dedos
     const wrist = lm[0];
     const middleTip = lm[12];
-    // Si la diferencia en Y entre la muñeca y la punta del dedo medio es suficiente
     const handHeight = Math.abs(wrist.y - middleTip.y);
     return handHeight > 0.12;
   }
@@ -141,15 +188,12 @@ class GestureDetector {
     const thumbTip = lm[4];
     const indexTip = lm[8];
 
-    // Distancia entre pulgar e índice
     const distance = this._distance(thumbTip, indexTip);
 
-    // Los otros dedos deben estar extendidos (medio, anular, meñique)
     const middleExtended = lm[12].y < lm[10].y;
     const ringExtended = lm[16].y < lm[14].y;
     const pinkyExtended = lm[20].y < lm[18].y;
 
-    // OK = pulgar e índice juntos + otros dedos extendidos
     return distance < 0.06 && middleExtended && ringExtended && pinkyExtended;
   }
 
@@ -159,21 +203,12 @@ class GestureDetector {
   _countExtendedFingers(lm) {
     let count = 0;
 
-    // Pulgar: comparar posición x de la punta (4) con la articulación (3)
-    // (simplificado, funciona para mano derecha/izquierda)
     const thumbExtended = Math.abs(lm[4].x - lm[3].x) > 0.02;
     if (thumbExtended) count++;
 
-    // Índice: punta (8) más arriba que articulación PIP (6)
     if (lm[8].y < lm[6].y) count++;
-
-    // Medio: punta (12) más arriba que articulación PIP (10)
     if (lm[12].y < lm[10].y) count++;
-
-    // Anular: punta (16) más arriba que articulación PIP (14)
     if (lm[16].y < lm[14].y) count++;
-
-    // Meñique: punta (20) más arriba que articulación PIP (18)
     if (lm[20].y < lm[18].y) count++;
 
     return count;
@@ -200,14 +235,19 @@ class GestureDetector {
 
     switch (gesture) {
       case 'stop':
-        action = 'toggle-play';
-        message = '✋ Gesto de STOP – Pausar/Reanudar';
+        action = 'pause';
+        message = '✋ Gesto de STOP – Pausar';
         icon = '✋';
         break;
       case 'ok':
-        action = 'confirm';
-        message = '👌 Gesto OK – Confirmado';
+        action = 'play';
+        message = '👌 Gesto OK – Reanudar';
         icon = '👌';
+        break;
+      case 'x-cross':
+        action = 'clear-queue-after';
+        message = '❌ Gesto X – Limpiar cola posterior';
+        icon = '❌';
         break;
       default:
         return;

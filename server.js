@@ -84,11 +84,9 @@ io.on('connection', (socket) => {
       const removed = state.queue.splice(index, 1)[0];
       console.log(`[Cola] Eliminada: ${removed.title}`);
 
-      // Ajustar el índice actual si es necesario
       if (index < state.currentIndex) {
         state.currentIndex--;
       } else if (index === state.currentIndex) {
-        // Si se elimina la canción actual, pasar a la siguiente o parar
         if (state.queue.length === 0) {
           state.currentIndex = -1;
           state.isPlaying = false;
@@ -192,6 +190,13 @@ io.on('connection', (socket) => {
         }
         io.emit('sync-state', state);
         break;
+      case 'previous':
+        if (state.queue.length > 0) {
+          state.currentIndex = (state.currentIndex - 1 + state.queue.length) % state.queue.length;
+          state.isPlaying = true;
+        }
+        io.emit('sync-state', state);
+        break;
       case 'mute':
         state.isMuted = true;
         io.emit('sync-state', state);
@@ -205,6 +210,20 @@ io.on('connection', (socket) => {
         break;
       case 'restart':
         io.emit('restart-song');
+        break;
+      case 'clear-queue-after':
+        // Eliminar todas las canciones POSTERIORES a la actual
+        if (state.currentIndex >= 0 && state.currentIndex < state.queue.length) {
+          const removedCount = state.queue.length - state.currentIndex - 1;
+          state.queue = state.queue.slice(0, state.currentIndex + 1);
+          console.log(`[Cola] Eliminadas ${removedCount} canciones posteriores (gesto X)`);
+          io.emit('sync-state', state);
+          io.emit('notification', {
+            type: 'queue',
+            message: `❌ ${removedCount} canciones eliminadas de la cola`,
+            icon: '❌'
+          });
+        }
         break;
     }
   });
@@ -225,7 +244,6 @@ io.on('connection', (socket) => {
         state.currentIndex++;
         state.isPlaying = true;
       } else {
-        // Fin de la cola
         state.isPlaying = false;
         io.emit('notification', {
           type: 'info',
@@ -245,7 +263,6 @@ io.on('connection', (socket) => {
 // --- Arrancar servidor ---
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
-  // Obtener IP local para mostrar en consola
   const os = require('os');
   const interfaces = os.networkInterfaces();
   let localIP = 'localhost';

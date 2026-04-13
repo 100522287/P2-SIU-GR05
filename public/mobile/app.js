@@ -45,6 +45,8 @@
   const btnVoice = document.getElementById('btn-voice');
   const voiceFeedback = document.getElementById('voice-feedback');
   const voiceResult = document.getElementById('voice-result');
+  const btnVoiceContinuous = document.getElementById('btn-voice-continuous');
+  const continuousStatus = document.getElementById('continuous-status');
 
   // Queue
   const mobileQueueList = document.getElementById('mobile-queue-list');
@@ -191,7 +193,6 @@
       </div>
     `).join('');
 
-    // Event listeners para añadir
     container.querySelectorAll('.song-card').forEach(card => {
       const addBtn = card.querySelector('.song-add-btn');
       addBtn.addEventListener('click', (e) => {
@@ -214,7 +215,6 @@
 
     socket.emit('add-to-queue', song);
 
-    // Feedback visual
     card.classList.add('added');
     const btn = card.querySelector('.song-add-btn');
     btn.textContent = '✓';
@@ -223,7 +223,6 @@
       btn.textContent = '+';
     }, 1500);
 
-    // Vibrar si disponible
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
@@ -235,7 +234,6 @@
   // CONTROLS
   // =============================================
   function updateControlsUI(state) {
-    // Now Playing
     if (state.currentIndex >= 0 && state.currentIndex < state.queue.length) {
       const song = state.queue[state.currentIndex];
       mobileCurrentTitle.textContent = song.title;
@@ -245,7 +243,6 @@
       mobileCurrentArtist.textContent = 'Añade canciones para empezar';
     }
 
-    // Play/Pause button
     if (state.isPlaying) {
       playPauseIcon.textContent = '⏸️';
       playPauseLabel.textContent = 'Pausa';
@@ -254,7 +251,6 @@
       playPauseLabel.textContent = 'Play';
     }
 
-    // Mute button
     if (state.isMuted) {
       muteIcon.textContent = '🔊';
       btnMute.classList.add('muted');
@@ -263,7 +259,6 @@
       btnMute.classList.remove('muted');
     }
 
-    // Volume slider
     volumeSlider.value = state.volume;
   }
 
@@ -313,7 +308,6 @@
       </div>
     `).join('');
 
-    // Event listener para eliminar
     mobileQueueList.querySelectorAll('.q-remove').forEach(btn => {
       btn.addEventListener('click', () => {
         const index = parseInt(btn.dataset.index);
@@ -326,13 +320,15 @@
   // =============================================
   // VOICE COMMANDS
   // =============================================
+
+  // --- Botón de escucha manual (pulsación única) ---
   btnVoice.addEventListener('click', () => {
     if (!voice.isSupported) {
       showMobileNotification('❌ Tu navegador no soporta reconocimiento de voz');
       return;
     }
 
-    if (voice.isListening) {
+    if (voice.manualMode && voice.isListening) {
       voice.stopListening();
       btnVoice.classList.remove('listening');
     } else {
@@ -340,13 +336,33 @@
       btnVoice.classList.add('listening');
       voiceFeedback.classList.add('hidden');
 
-      // Auto-reset listening state
       setTimeout(() => {
         btnVoice.classList.remove('listening');
       }, 5000);
     }
   });
 
+  // --- Botón de escucha continua (toggle) ---
+  btnVoiceContinuous.addEventListener('click', () => {
+    if (!voice.isSupported) {
+      showMobileNotification('❌ Tu navegador no soporta reconocimiento de voz');
+      return;
+    }
+
+    if (voice.isContinuousActive) {
+      voice.stopContinuousListening();
+      btnVoiceContinuous.classList.remove('active');
+      continuousStatus.classList.add('hidden');
+      showMobileNotification('🎙️ Escucha continua desactivada');
+    } else {
+      voice.startContinuousListening();
+      btnVoiceContinuous.classList.add('active');
+      continuousStatus.classList.remove('hidden');
+      showMobileNotification('🎙️ Escucha continua activada – Di "karaoke" + comando');
+    }
+  });
+
+  // --- Callback de comandos de voz ---
   voice.onCommand((cmd) => {
     btnVoice.classList.remove('listening');
     voiceFeedback.classList.remove('hidden');
@@ -358,47 +374,38 @@
       return;
     }
 
-    voiceResult.textContent = `${cmd.icon} ${cmd.message}`;
+    const wakeLabel = cmd.wakeWord ? ' (voz continua)' : '';
+    voiceResult.textContent = `${cmd.icon} ${cmd.message}${wakeLabel}`;
 
     // Enviar comando al servidor
     socket.emit('voice-command', { command: cmd.keyword || cmd.action });
 
     // Ejecutar la acción
+    const gestureData = {
+      gesture: `voice-${cmd.action}`,
+      action: cmd.action,
+      message: `🎤 Voz: "${cmd.keyword}" → ${cmd.message}`,
+      icon: '🎤',
+      source: 'mobile-voice'
+    };
+
     switch (cmd.action) {
       case 'skip':
-        socket.emit('gesture-detected', {
-          gesture: 'voice-skip',
-          action: 'skip',
-          message: `🎤 Voz: "${cmd.keyword}"→ Siguiente`,
-          icon: '🎤',
-          source: 'mobile-voice'
-        });
+        socket.emit('gesture-detected', gestureData);
         break;
       case 'pause':
-        socket.emit('gesture-detected', {
-          gesture: 'voice-pause',
-          action: 'pause',
-          message: `🎤 Voz: "${cmd.keyword}" → Pausar`,
-          icon: '🎤',
-          source: 'mobile-voice'
-        });
+        socket.emit('gesture-detected', gestureData);
         break;
       case 'play':
-        socket.emit('gesture-detected', {
-          gesture: 'voice-play',
-          action: 'play',
-          message: `🎤 Voz: "${cmd.keyword}" → Reproducir`,
-          icon: '🎤',
-          source: 'mobile-voice'
-        });
+        socket.emit('gesture-detected', gestureData);
         break;
       case 'mute':
+        socket.emit('gesture-detected', gestureData);
+        break;
+      case 'previous':
         socket.emit('gesture-detected', {
-          gesture: 'voice-mute',
-          action: 'mute',
-          message: `🎤 Voz: "${cmd.keyword}" → Silenciar`,
-          icon: '🎤',
-          source: 'mobile-voice'
+          ...gestureData,
+          action: 'previous'
         });
         break;
     }
@@ -422,8 +429,6 @@
     });
 
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-
-    // Feedback visual en tab de gestos
     highlightGestureCard('gesture-shake');
   });
 
@@ -440,7 +445,6 @@
     });
 
     if (navigator.vibrate) navigator.vibrate([200]);
-
     highlightGestureCard('gesture-drop');
   });
 
@@ -485,7 +489,6 @@
       }, 300);
     }, 3000);
 
-    // Max 3 notificaciones
     while (mobileNotifs.children.length > 3) {
       mobileNotifs.removeChild(mobileNotifs.firstChild);
     }

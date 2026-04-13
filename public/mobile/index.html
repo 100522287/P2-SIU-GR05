@@ -81,7 +81,6 @@
         </div>
 
         <div class="results-container" id="search-results">
-          <!-- Catálogo por defecto -->
           <h3 class="section-title">🎵 Catálogo de canciones</h3>
           <div id="catalog-list" class="song-list"></div>
         </div>
@@ -127,11 +126,27 @@
         <!-- Voice Commands -->
         <div class="voice-section">
           <h3 class="section-title">🎤 Comandos de voz</h3>
+
+          <!-- Botón de escucha manual -->
           <button class="voice-btn" id="btn-voice">
             <span class="voice-btn-icon">🎙️</span>
             <span class="voice-btn-text">Toca para hablar</span>
           </button>
-          <p class="voice-hint">Di: <strong>"siguiente"</strong>, <strong>"pausa"</strong>, <strong>"reproducir"</strong>, <strong>"silencio"</strong></p>
+
+          <!-- Botón de escucha continua -->
+          <button class="voice-continuous-btn" id="btn-voice-continuous">
+            <span class="voice-continuous-icon">🔄</span>
+            <span class="voice-continuous-text">Escucha continua (palabra clave)</span>
+          </button>
+          <div class="continuous-status hidden" id="continuous-status">
+            <div class="continuous-dot"></div>
+            <span>Escuchando... Di <strong>"karaoke"</strong> + comando</span>
+          </div>
+
+          <p class="voice-hint">
+            <strong>Manual:</strong> Pulsa y di: "siguiente", "pausa", "reproducir", "silencio", "anterior"<br>
+            <strong>Continua:</strong> Di: <strong>"karaoke siguiente"</strong>, <strong>"karaoke pausa"</strong>, etc.
+          </p>
           <div class="voice-feedback hidden" id="voice-feedback">
             <span class="voice-result" id="voice-result"></span>
           </div>
@@ -167,7 +182,7 @@
             <div class="gesture-card-icon">⬇️</div>
             <div class="gesture-card-info">
               <h4>Descenso Brusco → Mute</h4>
-              <p>Baja el móvil bruscamente para silenciar al instante</p>
+              <p>Baja el brazo completo bruscamente (no solo muñeca) para silenciar</p>
             </div>
             <div class="gesture-card-status" id="drop-status">
               <span class="status-indicator active"></span> Activo
@@ -178,7 +193,7 @@
             <div class="gesture-card-icon">✋</div>
             <div class="gesture-card-info">
               <h4>Gesto de Stop (Cámara TV)</h4>
-              <p>Muestra la palma abierta a la webcam de la TV para pausar</p>
+              <p>Muestra la palma abierta a la webcam de la TV para <strong>pausar</strong></p>
             </div>
             <div class="gesture-card-status">
               <span class="status-indicator active"></span> En TV
@@ -189,7 +204,18 @@
             <div class="gesture-card-icon">👌</div>
             <div class="gesture-card-info">
               <h4>Gesto OK (Cámara TV)</h4>
-              <p>Muestra el gesto OK a la webcam de la TV para confirmar</p>
+              <p>Muestra el gesto OK a la webcam de la TV para <strong>reanudar</strong></p>
+            </div>
+            <div class="gesture-card-status">
+              <span class="status-indicator active"></span> En TV
+            </div>
+          </div>
+
+          <div class="gesture-card" id="gesture-x-cross">
+            <div class="gesture-card-icon">❌</div>
+            <div class="gesture-card-info">
+              <h4>Gesto X – Limpiar cola</h4>
+              <p>Cruza los brazos en X frente a la webcam de la TV para eliminar canciones posteriores de la cola</p>
             </div>
             <div class="gesture-card-status">
               <span class="status-indicator active"></span> En TV
@@ -200,7 +226,7 @@
             <div class="gesture-card-icon">🎤</div>
             <div class="gesture-card-info">
               <h4>Comandos de Voz</h4>
-              <p>Di "siguiente", "pausa", "reproducir" o "silencio"</p>
+              <p>Di "siguiente", "pausa", "reproducir", "silencio" o "anterior". También con palabra clave "karaoke"</p>
             </div>
             <div class="gesture-card-status">
               <span class="status-indicator active"></span> Activo
@@ -211,7 +237,7 @@
             <div class="gesture-card-icon">👏</div>
             <div class="gesture-card-info">
               <h4>Doble Aplauso → Reiniciar</h4>
-              <p>Dos aplausos rápidos para reiniciar la canción actual desde el principio</p>
+              <p>Dos aplausos fuertes y rápidos para reiniciar la canción actual desde el principio</p>
             </div>
             <div class="gesture-card-status">
               <span class="status-indicator active"></span> En TV
