@@ -929,40 +929,46 @@ body {
 /* --- Mobile Notifications --- */
 #mobile-notifications {
   position: fixed;
-  top: 56px;
-  left: 10px;
-  right: 10px;
+  top: auto; /* Anulamos cualquier valor de top previo */
+  bottom: 85px; /* Justo encima de la barra de pestañas */
+  left: 50%;
+  transform: translateX(-50%); /* Centrado perfecto */
   z-index: 200;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* Apila hacia arriba si hay varias */
   gap: 6px;
   pointer-events: none;
+  width: max-content;
+  max-width: 90%;
 }
 
 .mobile-notif {
-  padding: 10px 16px;
+  padding: 8px 16px;
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xs);
+  border-radius: 30px; /* Forma de píldora más elegante */
   backdrop-filter: blur(20px);
   font-size: 13px;
   font-weight: 500;
-  animation: slideDown 0.3s ease-out;
+  animation: slideUpIn 0.3s ease-out;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
 .mobile-notif.removing {
-  animation: slideUp 0.3s ease-in forwards;
+  animation: fadeOutDown 0.3s ease-in forwards;
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-100%); opacity: 0; }
+@keyframes slideUpIn {
+  from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes fadeOutDown {
   from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(10px); opacity: 0; }
 }

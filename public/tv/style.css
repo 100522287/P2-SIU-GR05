@@ -545,10 +545,11 @@ body {
 /* --- Notifications --- */
 #notifications-container {
   position: fixed;
-  top: 75px;
+  top: auto; /* Anulamos el top original */
+  bottom: 150px; /* Flotando justo encima de la cámara web */
   right: 16px;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse; /* Apila hacia arriba */
   gap: 8px;
   z-index: 200;
   pointer-events: none;
@@ -558,17 +559,16 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 10px 16px; /* Un poco más compactas */
   background: var(--glass);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   backdrop-filter: blur(20px);
   box-shadow: var(--shadow);
   animation: slideInRight 0.4s ease-out;
-  min-width: 280px;
-  max-width: 400px;
+  min-width: 250px;
+  max-width: 350px; /* Menos anchas para no tapar la cola */
 }
-
 .notification.removing {
   animation: slideOutRight 0.3s ease-in forwards;
 }

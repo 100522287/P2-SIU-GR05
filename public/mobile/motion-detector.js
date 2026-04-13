@@ -7,6 +7,11 @@
  * MEJORAS en Drop: requiere aceleración Y sostenida y fuerte,
  * con verificación de que NO es un simple giro de muñeca.
  */
+/**
+ * motion-detector.js – Detección de movimientos del móvil
+ * Usa DeviceMotion API para detectar únicamente:
+ * - Shake (agitar) → Saltar canción
+ */
 class MotionDetector {
   constructor() {
     this.shakeThreshold = 25;     // Umbral de aceleración para shake
@@ -49,7 +54,7 @@ class MotionDetector {
     window.addEventListener('devicemotion', (e) => this._onMotion(e), true);
     this.isActive = true;
     this.permissionGranted = true;
-    console.log('[Motion] Detección de movimiento activa (drop umbral: ' + this.dropThreshold + ')');
+    console.log('[Motion] Detección de movimiento activa (solo agitar)');
     return true;
   }
 
@@ -65,12 +70,6 @@ class MotionDetector {
 
     // Magnitud total de aceleración
     const magnitude = Math.sqrt(x * x + y * y + z * z);
-
-    // Guardar historial de Y
-    this.accYHistory.push({ y: y, time: now });
-    if (this.accYHistory.length > this.maxHistory) {
-      this.accYHistory.shift();
-    }
 
     // --- Detección de SHAKE ---
     if (magnitude > this.shakeThreshold) {
@@ -88,51 +87,6 @@ class MotionDetector {
         console.log('[Motion] ¡SHAKE detectado!');
         if (this.onShakeCallback) {
           this.onShakeCallback();
-        }
-      }
-    }
-
-    // --- Detección de DROP MEJORADA ---
-    // Necesitamos detectar un movimiento descendente REAL del brazo completo,
-    // no un simple giro de muñeca.
-    //
-    // Criterios:
-    // 1. La aceleración Y debe superar un umbral alto de forma SOSTENIDA
-    // 2. Necesitamos varias muestras consecutivas de aceleración descendente fuerte
-    // 3. La magnitud total debe ser alta (no solo rotación)
-
-    const isDescending = this._checkDescendingPattern();
-
-    if (isDescending) {
-      if (!this.isInDrop) {
-        this.isInDrop = true;
-        this.dropStartTime = now;
-        this.dropSamples = 1;
-      } else {
-        this.dropSamples++;
-      }
-
-      // Verificar si el drop es lo suficientemente sostenido
-      const dropDuration = now - this.dropStartTime;
-      if (this.dropSamples >= this.dropRequiredSamples &&
-          dropDuration >= this.dropSustainedMs &&
-          (now - this.lastDropTime) > this.cooldownMs) {
-        this.lastDropTime = now;
-        this.isInDrop = false;
-        this.dropSamples = 0;
-        console.log('[Motion] ¡DROP detectado! (sostenido ' + dropDuration + 'ms, ' + this.dropSamples + ' muestras)');
-        if (this.onDropCallback) {
-          this.onDropCallback();
-        }
-      }
-    } else {
-      // Si dejó de descender, resetear
-      if (this.isInDrop) {
-        const dropDuration = now - this.dropStartTime;
-        // Si no duró lo suficiente, no es un drop real
-        if (dropDuration < this.dropSustainedMs || this.dropSamples < this.dropRequiredSamples) {
-          this.isInDrop = false;
-          this.dropSamples = 0;
         }
       }
     }

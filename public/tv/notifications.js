@@ -5,7 +5,7 @@ class NotificationManager {
   constructor(containerId = 'notifications-container') {
     this.container = document.getElementById(containerId);
     this.maxNotifications = 5;
-    this.defaultDuration = 3500;
+    this.defaultDuration = 1500;
   }
 
   show({ type = 'info', message = '', icon = 'ℹ️', duration = this.defaultDuration }) {

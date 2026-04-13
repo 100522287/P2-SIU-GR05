@@ -472,7 +472,7 @@
       setTimeout(() => {
         if (el.parentNode) el.parentNode.removeChild(el);
       }, 300);
-    }, 3000);
+    }, 1500);
 
     while (mobileNotifs.children.length > 3) {
       mobileNotifs.removeChild(mobileNotifs.firstChild);
